@@ -25,7 +25,7 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  version: 1.4.0
+  version: 1.4.1
 servers:
 - url: /
   description: Current server
@@ -549,7 +549,7 @@ paths:
           description: Internal server error
       security:
       - bearer_auth: []
-  /api/v1/admin/ci-oidc/:
+  /api/v1/admin/ci-oidc:
     get:
       tags:
       - admin
@@ -1149,7 +1149,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreatePolicyRequest'
+              $ref: '#/components/schemas/CreateLifecyclePolicyRequest'
         required: true
       responses:
         '200':
@@ -1235,7 +1235,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdatePolicyRequest'
+              $ref: '#/components/schemas/UpdateLifecyclePolicyRequest'
         required: true
       responses:
         '200':
@@ -1449,7 +1449,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReindexResponse'
+                $ref: '#/components/schemas/SearchReindexResponse'
         '500':
           description: Search engine is not configured
   /api/v1/admin/settings:
@@ -3632,7 +3632,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PackageResponse'
+                  $ref: '#/components/schemas/CurationPackageResponse'
   /api/v1/curation/packages/bulk-approve:
     post:
       tags:
@@ -3712,7 +3712,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PackageResponse'
+                $ref: '#/components/schemas/CurationPackageResponse'
   /api/v1/curation/packages/{id}/approve:
     post:
       tags:
@@ -3732,7 +3732,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PackageResponse'
+                $ref: '#/components/schemas/CurationPackageResponse'
   /api/v1/curation/packages/{id}/block:
     post:
       tags:
@@ -3752,7 +3752,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PackageResponse'
+                $ref: '#/components/schemas/CurationPackageResponse'
   /api/v1/curation/rules:
     get:
       tags:
@@ -7332,19 +7332,10 @@ paths:
       parameters:
       - name: artifact_id
         in: query
-        required: false
+        description: Artifact ID to list quality check results for
+        required: true
         schema:
-          type:
-          - string
-          - 'null'
-          format: uuid
-      - name: repository_id
-        in: query
-        required: false
-        schema:
-          type:
-          - string
-          - 'null'
+          type: string
           format: uuid
       responses:
         '200':
@@ -7355,6 +7346,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CheckResponse'
+        '400':
+          description: Missing or invalid artifact_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       security:
       - bearer_auth: []
   /api/v1/quality/checks/trigger:
@@ -8158,7 +8155,7 @@ paths:
                 minimum: 0
         required: true
       responses:
-        '200':
+        '201':
           description: Artifact uploaded
           content:
             application/json:
@@ -10224,6 +10221,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PolicyResponse'
+        '400':
+          description: Invalid max_severity (must be one of critical, high, medium, low; case-insensitive)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: repository_id does not reference an existing repository
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '422':
           description: Validation error
           content:
@@ -11740,7 +11749,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateApiTokenRequest'
+              $ref: '#/components/schemas/CreateUserApiTokenRequest'
         required: true
       responses:
         '200':
@@ -12063,7 +12072,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateApiTokenRequest'
+              $ref: '#/components/schemas/CreateUserApiTokenRequest'
         required: true
       responses:
         '200':
@@ -14799,6 +14808,38 @@ components:
           type:
           - string
           - 'null'
+    CreateLifecyclePolicyRequest:
+      type: object
+      description: Request to create a lifecycle policy.
+      required:
+      - name
+      - policy_type
+      - config
+      properties:
+        config:
+          type: object
+        cron_schedule:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        policy_type:
+          type: string
+        priority:
+          type:
+          - integer
+          - 'null'
+          format: int32
+        repository_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
     CreateMigrationRequest:
       type: object
       required:
@@ -15394,6 +15435,23 @@ components:
           type: string
         token:
           type: string
+    CreateUserApiTokenRequest:
+      type: object
+      required:
+      - name
+      - scopes
+      properties:
+        expires_in_days:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
     CreateUserRequest:
       type: object
       required:
@@ -15564,6 +15622,73 @@ components:
           - 'null'
           format: uuid
         version_constraint:
+          type: string
+    CurationPackageResponse:
+      type: object
+      required:
+      - id
+      - staging_repo_id
+      - remote_repo_id
+      - format
+      - package_name
+      - version
+      - upstream_path
+      - status
+      - metadata
+      - first_seen_at
+      properties:
+        architecture:
+          type:
+          - string
+          - 'null'
+        checksum_sha256:
+          type:
+          - string
+          - 'null'
+        evaluated_at:
+          type:
+          - string
+          - 'null'
+        evaluated_by:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        evaluation_reason:
+          type:
+          - string
+          - 'null'
+        first_seen_at:
+          type: string
+        format:
+          type: string
+        id:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+        package_name:
+          type: string
+        release:
+          type:
+          - string
+          - 'null'
+        remote_repo_id:
+          type: string
+          format: uuid
+        rule_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        staging_repo_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        upstream_path:
+          type: string
+        version:
           type: string
     CurationUpdateRuleRequest:
       type: object
@@ -18229,6 +18354,26 @@ components:
         transferred_bytes:
           type: integer
           format: int64
+    MigrationPaginationInfo:
+      type: object
+      required:
+      - page
+      - per_page
+      - total
+      - total_pages
+      properties:
+        page:
+          type: integer
+          format: int64
+        per_page:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+          format: int64
     MigrationReportResponse:
       type: object
       required:
@@ -19694,15 +19839,19 @@ components:
           type: object
     ReindexResponse:
       type: object
-      description: Response returned when a reindex is triggered.
       required:
-      - status
       - message
+      - artifacts_indexed
+      - repositories_indexed
       properties:
+        artifacts_indexed:
+          type: integer
+          format: int64
         message:
           type: string
-        status:
-          type: string
+        repositories_indexed:
+          type: integer
+          format: int64
     RejectArtifactRequest:
       type: object
       required:
@@ -20832,6 +20981,17 @@ components:
         score:
           type: number
           format: double
+    SearchReindexResponse:
+      type: object
+      description: Response returned when a reindex is triggered.
+      required:
+      - status
+      - message
+      properties:
+        message:
+          type: string
+        status:
+          type: string
     SearchResultItem:
       type: object
       description: A unified search result matching the frontend `SearchResult` interface.
@@ -22442,6 +22602,35 @@ components:
           type:
           - string
           - 'null'
+    UpdateLifecyclePolicyRequest:
+      type: object
+      description: Request to update a lifecycle policy.
+      properties:
+        config:
+          type:
+          - object
+          - 'null'
+        cron_schedule:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        enabled:
+          type:
+          - boolean
+          - 'null'
+        name:
+          type:
+          - string
+          - 'null'
+        priority:
+          type:
+          - integer
+          - 'null'
+          format: int32
     UpdateOidcConfigRequest:
       type: object
       properties:
