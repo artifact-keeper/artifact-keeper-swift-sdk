@@ -1,0 +1,40 @@
+# Dependency monitoring for the Artifact Keeper Swift SDK.
+#
+# Modelled on the backend's .github/dependabot.yml, minus the parts that do
+# not apply here: its cargo entry and the accompanying RustCrypto/`digest`
+# ignore block are specific to that Rust workspace, and its
+# `reviewers: artifact-keeper/maintainers` names a team that does not exist
+# in this org, so copying it would request review from nobody. Labels are
+# left to Dependabot's own `dependencies` default rather than naming custom
+# labels this repository does not define -- Dependabot silently drops labels
+# it cannot find.
+version: 2
+updates:
+  # Workflow actions used by validate.yml.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+
+  # Swift package dependencies declared in the root Package.swift
+  # (apple/swift-openapi-generator, -runtime and -urlsession). This SDK is
+  # consumed by downstream apps, so anything vulnerable in its dependency
+  # tree is inherited by every consumer.
+  #
+  # Caveat worth knowing before relying on this: no Package.resolved is
+  # committed here (the tree holds Package.swift only). Dependabot's Swift
+  # support resolves updates against a committed Package.resolved, so this
+  # entry may stay quiet until one is checked in. The dependencies are also
+  # declared with `from:`, which already admits semver-compatible upgrades at
+  # build time -- convenient, but it means the version actually built is not
+  # recorded anywhere in the repo. Committing Package.resolved is what would
+  # both pin the build and let these bumps flow; that is a separate change and
+  # is deliberately not bundled here.
+  - package-ecosystem: "swift"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
