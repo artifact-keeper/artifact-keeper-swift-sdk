@@ -14,7 +14,7 @@ jobs:
       matrix:
         swift: ["6.0", "6.1"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: swift-actions/setup-swift@v2
         with:
