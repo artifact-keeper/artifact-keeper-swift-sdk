@@ -1,0 +1,29 @@
+# Dependency monitoring for the Artifact Keeper Swift SDK.
+#
+# Modelled on the backend's .github/dependabot.yml, minus the parts that do
+# not apply here: its cargo entry and the accompanying RustCrypto/`digest`
+# ignore block are specific to that Rust workspace, and its
+# `reviewers: artifact-keeper/maintainers` names a team that does not exist
+# in this org, so copying it would request review from nobody. Labels are
+# left to Dependabot's own `dependencies` default rather than naming custom
+# labels this repository does not define -- Dependabot silently drops labels
+# it cannot find.
+version: 2
+updates:
+  # Workflow actions used by validate.yml.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+
+  # Swift package dependencies declared in the root Package.swift. This SDK
+  # is consumed by downstream apps, so anything vulnerable in its dependency
+  # tree is inherited by every consumer.
+  - package-ecosystem: "swift"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
