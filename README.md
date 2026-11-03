@@ -1,12 +1,5 @@
 # ArtifactKeeperClient
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/artifact-keeper/.github/main/brand/logo-horizontal-dark.png">
-    <img alt="Artifact Keeper" src="https://raw.githubusercontent.com/artifact-keeper/.github/main/brand/logo-horizontal-light.png" width="360">
-  </picture>
-</p>
-
 Swift client SDK for the [Artifact Keeper](https://github.com/artifact-keeper/artifact-keeper-api) REST API, generated from the OpenAPI 3.1 specification using [swift-openapi-generator](https://github.com/apple/swift-openapi-generator).
 
 ## Requirements
